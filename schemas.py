@@ -1,48 +1,46 @@
 """
-Database Schemas
-
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
+Database Schemas for Discord Role Automation
 
 Each Pydantic model represents a collection in your database.
 Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+- GuildConfig -> "guildconfig"
+- RoleMapping -> "rolemapping"
+- MemberLink -> "memberlink"
 """
 
 from pydantic import BaseModel, Field
 from typing import Optional
 
-# Example schemas (replace with your own):
-
-class User(BaseModel):
+class GuildConfig(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Stores per-guild configuration, including the bot token used to manage roles.
+    Collection name: guildconfig
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    guild_id: str = Field(..., description="Discord Guild (Server) ID")
+    bot_token: str = Field(..., description="Discord Bot Token with Manage Roles permission in the guild")
+    guild_name: Optional[str] = Field(None, description="Readable guild name")
 
-class Product(BaseModel):
+class RoleMapping(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Maps a product/membership plan to a Discord role id within a guild.
+    Collection name: rolemapping
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    guild_id: str = Field(..., description="Discord Guild ID")
+    plan: str = Field(..., description="Product or membership plan identifier")
+    role_id: str = Field(..., description="Discord Role ID to assign")
+    role_name: Optional[str] = Field(None, description="Readable role name")
 
-# Add your own schemas here:
-# --------------------------------------------------
+class MemberLink(BaseModel):
+    """
+    Optional linkage of an external user to a Discord user id.
+    Collection name: memberlink
+    """
+    provider: str = Field(..., description="Provider name e.g., stripe, gumroad, patreon")
+    provider_user_id: str = Field(..., description="User id at the provider")
+    discord_user_id: str = Field(..., description="Discord user id (snowflake)")
+    guild_id: str = Field(..., description="Discord Guild ID")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class AssignmentRequest(BaseModel):
+    guild_id: str
+    discord_user_id: str
+    plan: str
